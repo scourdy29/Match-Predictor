@@ -96,3 +96,10 @@ select:focus {
   color: #FFD700;
   font-size: 1.8rem;
 }
+
+.confidence {
+  color: #888;
+  font-size: 0.85rem;
+  margin-top: 8px;
+  letter-spacing: 1px;
+}

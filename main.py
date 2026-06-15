@@ -55,5 +55,8 @@ def predict_match(input_data: MatchInput):
         away_goal_difference_rate_encoded
     ]]
     
-    prediction = loaded_model.predict(features)[0]
-    return {"predicted_winner": prediction}
+    probabilities = loaded_model.predict_proba(features)[0]
+    confidence = round(max(probabilities) * 100, 1)
+    prediction = loaded_model.classes_[probabilities.argmax()]
+    
+    return {"predicted_winner": prediction, "confidence": confidence}

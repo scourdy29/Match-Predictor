@@ -21,6 +21,7 @@ function App() {
   const [awayTeam, setAwayTeam] = useState("");
   const [tournament, setTournament] = useState("");
   const [prediction, setPrediction] = useState("");
+  const [confidence, setConfidence] = useState(null);
 
   function formatPrediction(pred) {
     if (pred === "home_win") return `🏆 ${homeTeam} Wins!`;
@@ -36,7 +37,10 @@ function App() {
       body: JSON.stringify({ home_team: homeTeam, away_team: awayTeam, tournament })
     })
     .then(response => response.json())
-    .then(data => setPrediction(data.predicted_winner))
+    .then(data => {
+      setPrediction(data.predicted_winner);
+      setConfidence(data.confidence);
+    })
     .catch(error => console.error("Error:", error));
   }
 
@@ -44,8 +48,7 @@ function App() {
     <div className="app">
       <div className="header">
         <div className="trophy">⚽</div>
-        <h1>Match Predictor</h1>
-        <p className="subtitle">Powered by Machine Learning</p>
+        <h1>World Cup Predictor</h1>
       </div>
 
       <div className="card">
@@ -89,6 +92,7 @@ function App() {
           <div className="result">
             <p className="result-label">Prediction</p>
             <h2>{formatPrediction(prediction)}</h2>
+            <p className="confidence">{confidence}% confident</p>
           </div>
         )}
       </div>
