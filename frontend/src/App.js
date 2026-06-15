@@ -47,7 +47,7 @@ function formatPrediction(pred) {
           ))}
         </select>
       </div>
-      <button onClick={() => fetch('https://match-predictor-kv3y.onrender.com/predict/predict', {
+      <button onClick={() => fetch('https://match-predictor-kv3y.onrender.com/predict', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
