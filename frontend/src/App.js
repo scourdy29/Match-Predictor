@@ -14,12 +14,9 @@ const teams = [
   "Ukraine", "United States", "Uruguay"
 ];
 
-const tournaments = ["FIFA World Cup"]
-
 function App() {
   const [homeTeam, setHomeTeam] = useState("");
   const [awayTeam, setAwayTeam] = useState("");
-  const [tournament, setTournament] = useState("");
   const [prediction, setPrediction] = useState("");
   const [confidence, setConfidence] = useState(null);
 
@@ -34,7 +31,7 @@ function App() {
     fetch('https://match-predictor-kv3y.onrender.com/predict', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ home_team: homeTeam, away_team: awayTeam, tournament })
+      body: JSON.stringify({ home_team: homeTeam, away_team: awayTeam, tournament: "FIFA World Cup" })
     })
     .then(response => response.json())
     .then(data => {
@@ -53,7 +50,7 @@ function App() {
 
       <div className="card">
         <div className="form-group">
-          <label>Home Team</label>
+          <label>Team 1</label>
           <select value={homeTeam} onChange={(e) => setHomeTeam(e.target.value)}>
             <option value="">Select Home Team</option>
             {teams.map((team) => (
@@ -65,21 +62,11 @@ function App() {
         <div className="vs">VS</div>
 
         <div className="form-group">
-          <label>Away Team</label>
+          <label>Team 2</label>
           <select value={awayTeam} onChange={(e) => setAwayTeam(e.target.value)}>
             <option value="">Select Away Team</option>
             {teams.map((team) => (
               <option key={team} value={team}>{team}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="form-group">
-          <label>Tournament</label>
-          <select value={tournament} onChange={(e) => setTournament(e.target.value)}>
-            <option value="">Select Tournament</option>
-            {tournaments.map((t) => (
-              <option key={t} value={t}>{t}</option>
             ))}
           </select>
         </div>
