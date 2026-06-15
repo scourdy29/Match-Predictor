@@ -1,4 +1,5 @@
 import React, {useState} from "react";
+import "./App.css";
 
 const teams = ['Abkhazia', 'Afghanistan', 'Albania', 'Alderney', 'Algeria', 'American Samoa', 'Andorra', 'Angola', 'Anguilla', 'Antigua and Barbuda', 'Arameans Suryoye', 'Argentina', 'Armenia', 'Artsakh', 'Aruba', 'Australia', 'Austria', 'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Barawa', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bermuda', 'Bhutan', 'Biafra', 'Bolivia', 'Bonaire', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'British Virgin Islands', 'Brittany', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi', 'Cambodia', 'Cameroon', 'Canada', 'Cape Verde', 'Cascadia', 'Cayman Islands', 'Central African Republic', 'Chad', 'Chameria', 'Chile', 'China', 'Colombia', 'Comoros', 'Congo', 'Cook Islands', 'Corsica', 'Costa Rica', 'County of Nice', 'Croatia', 'Cuba', 'Curaçao', 'Cyprus', 'Czech Republic', 'Czechoslovakia', 'DR Congo', 'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic', 'Délvidék', 'Ecuador', 'Egypt', 'El Salvador', 'Ellan Vannin', 'England', 'Equatorial Guinea', 'Eritrea', 'Estonia', 'Eswatini', 'Ethiopia', 'Falkland Islands', 'Faroe Islands', 'Felvidék', 'Fiji', 'Finland', 'France', 'French Guiana', 'Frøya', 'Gabon', 'Gambia', 'Georgia', 'German DR', 'Germany', 'Ghana', 'Gibraltar', 'Gotland', 'Gozo', 'Greece', 'Greenland', 'Grenada', 'Guadeloupe', 'Guam', 'Guatemala', 'Guernsey', 'Guinea', 'Guinea-Bissau', 'Guyana', 'Haiti', 'Hitra', 'Hmong', 'Honduras', 'Hong Kong', 'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Iraqi Kurdistan', 'Isle of Man', 'Isle of Wight', 'Israel', 'Italy', 'Ivory Coast', 'Jamaica', 'Japan', 'Jersey', 'Jordan', 'Kazakhstan', 'Kenya', 'Kernow', 'Kosovo', 'Kurdistan', 'Kuwait', 'Kyrgyzstan', 'Kárpátalja', 'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya', 'Liechtenstein', 'Lithuania', 'Luxembourg', 'Macau', 'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 'Mapuche', 'Martinique', 'Matabeleland', 'Mauritania', 'Mauritius', 'Mayotte', 'Menorca', 'Mexico', 'Moldova', 'Mongolia', 'Montenegro', 'Montserrat', 'Morocco', 'Mozambique', 'Myanmar', 'Namibia', 'Nepal', 'Netherlands', 'New Caledonia', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'North Korea', 'North Macedonia', 'North Vietnam', 'Northern Cyprus', 'Northern Ireland', 'Northern Mariana Islands', 'Norway', 'Occitania', 'Oman', 'Orkney', 'Padania', 'Pakistan', 'Palestine', 'Panama', 'Panjab', 'Papua New Guinea', 'Paraguay', 'Parishes of Jersey', 'Peru', 'Philippines', 'Poland', 'Portugal', 'Provence', 'Puerto Rico', 'Qatar', 'Quebec', 'Raetia', 'Republic of Ireland', 'Republic of St. Pauli', 'Rhodes', 'Romania', 'Russia', 'Rwanda', 'Réunion', 'Saare County', 'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Martin', 'Saint Vincent and the Grenadines', 'Samoa', 'San Marino', 'Saudi Arabia', 'Scotland', 'Senegal', 'Serbia', 'Seychelles', 'Shetland', 'Sierra Leone', 'Singapore', 'Sint Maarten', 'Slovakia', 'Slovenia', 'Solomon Islands', 'Somalia', 'Somaliland', 'South Africa', 'South Korea', 'South Ossetia', 'South Sudan', 'Spain', 'Sri Lanka', 'Sudan', 'Suriname', 'Sweden', 'Switzerland', 'Syria', 'Székely Land', 'Sápmi', 'São Tomé and Príncipe', 'Tahiti', 'Taiwan', 'Tajikistan', 'Tamil Eelam', 'Tanzania', 'Thailand', 'Timor-Leste', 'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Turkmenistan', 'Turks and Caicos Islands', 'Tuvalu', 'Uganda', 'Ukraine', 'United Arab Emirates', 'United Koreans in Japan', 'United States', 'United States Virgin Islands', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Venezuela', 'Vietnam', 'Vietnam Republic', 'Wales', 'Wallis Islands and Futuna', 'Western Armenia', 'Western Australia', 'Western Isles', 'Western Sahara', 'Yemen', 'Ynys Môn', 'Yugoslavia', 'Zambia', 'Zanzibar', 'Zimbabwe', 'Åland Islands'];
 
@@ -10,51 +11,76 @@ function App() {
   const [tournament, setTournament] = useState("");
   const [prediction, setPrediction] = useState("");
 
-function formatPrediction(pred) {
-  if (pred === "home_win") return homeTeam + " Wins";
-  if (pred === "away_win") return awayTeam + " Wins";
-  if (pred === "draw") return "Draw";
-  return pred;
-}
+  function formatPrediction(pred) {
+    if (pred === "home_win") return `🏆 ${homeTeam} Wins!`;
+    if (pred === "away_win") return `🏆 ${awayTeam} Wins!`;
+    if (pred === "draw") return "🤝 It's a Draw!";
+    return pred;
+  }
+
+  function handlePredict() {
+    fetch('https://match-predictor-kv3y.onrender.com/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ home_team: homeTeam, away_team: awayTeam, tournament })
+    })
+    .then(response => response.json())
+    .then(data => setPrediction(data.predicted_winner))
+    .catch(error => console.error("Error:", error));
+  }
 
   return (
-    <div>
-      <h1>World Cup Match Predictor</h1>
-      <div>
-        <label>Home Team:</label>
-        <select value={homeTeam} onChange={(e) => setHomeTeam(e.target.value)}>
-          <option value="">Select Home Team</option>
-          {teams.map((team) => (
-            <option key={team} value={team}>{team}</option>
-          ))}
-        </select>
+    <div className="app">
+      <div className="header">
+        <div className="trophy">⚽</div>
+        <h1>Match Predictor</h1>
+        <p className="subtitle">Powered by Machine Learning</p>
       </div>
-      <div>
-        <label>Away Team:</label>
-        <select value={awayTeam} onChange={(e) => setAwayTeam(e.target.value)}>
-          <option value="">Select Away Team</option>
-          {teams.map((team) => (
-            <option key={team} value={team}>{team}</option>
-          ))}
-        </select>
+
+      <div className="card">
+        <div className="form-group">
+          <label>Home Team</label>
+          <select value={homeTeam} onChange={(e) => setHomeTeam(e.target.value)}>
+            <option value="">Select Home Team</option>
+            {teams.map((team) => (
+              <option key={team} value={team}>{team}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="vs">VS</div>
+
+        <div className="form-group">
+          <label>Away Team</label>
+          <select value={awayTeam} onChange={(e) => setAwayTeam(e.target.value)}>
+            <option value="">Select Away Team</option>
+            {teams.map((team) => (
+              <option key={team} value={team}>{team}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label>Tournament</label>
+          <select value={tournament} onChange={(e) => setTournament(e.target.value)}>
+            <option value="">Select Tournament</option>
+            {tournaments.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </div>
+
+        <button className="predict-btn" onClick={handlePredict}>
+          Predict Match
+        </button>
+
+        {prediction && (
+          <div className="result">
+            <p className="result-label">Prediction</p>
+            <h2>{formatPrediction(prediction)}</h2>
+          </div>
+        )}
       </div>
-      <div>
-        <label>Tournament:</label>
-        <select value={tournament} onChange={(e) => setTournament(e.target.value)}>
-          <option value="">Select Tournament</option>
-          {tournaments.map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
-      </div>
-      <button onClick={() => fetch('https://match-predictor-kv3y.onrender.com/predict', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ home_team: homeTeam, away_team: awayTeam, tournament })
-      }).then(response => response.json()).then(data => setPrediction(data.predicted_winner))}>Predict</button>
-      {formatPrediction(prediction) && <h2>Prediction: {formatPrediction(prediction)}</h2>}
     </div>
   );
 }
