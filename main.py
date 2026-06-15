@@ -22,8 +22,8 @@ loaded_model = joblib.load("world_cup_rf_model.pkl")
 loaded_encoder = joblib.load("tournament_label_encoder.pkl")
 loaded_home_win_rate_encoder = joblib.load("home_win_rate.pkl")
 loaded_away_win_rate_encoder = joblib.load("away_win_rate.pkl")
-loaded_home_goal_difference_rate_encoder = joblib.load("home_goal_difference_rate.pkl")
-loaded_away_goal_difference_rate_encoder = joblib.load("away_goal_difference_rate.pkl")
+loaded_home_goal_difference_rate_encoder = joblib.load("home_goal_diff_rate.pkl")
+loaded_away_goal_difference_rate_encoder = joblib.load("away_goal_diff_rate.pkl")
 
 class MatchInput(BaseModel):
     home_team: str
