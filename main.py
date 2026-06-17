@@ -11,6 +11,12 @@ df_matches = pd.read_csv("results_cleaned.csv")
 if not os.path.exists("world_cup_rf_model.pkl"):
     print("Model not found, training now...")
     subprocess.run(["python", "train.py"], check=True)
+    
+if not os.path.exists("results_cleaned.csv"):
+    print("Data not found, downloading...")
+    import gdown
+    url = "https://drive.google.com/uc?export=download&id=1xDsOM11o5edXUxJAlj3ICycLt6FmL2q0"
+    gdown.download(url, "results_cleaned.csv", quiet=False)
 
 app = FastAPI()
 
