@@ -4,6 +4,9 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import subprocess
+import pandas as pd
+
+df_matches = pd.read_csv("results_cleaned.csv")
 
 if not os.path.exists("world_cup_rf_model.pkl"):
     print("Model not found, training now...")
@@ -60,3 +63,23 @@ def predict_match(input_data: MatchInput):
     prediction = loaded_model.classes_[probabilities.argmax()]
     
     return {"predicted_winner": prediction, "confidence": confidence}
+
+@app.get("/head-to-head")
+def head_to_head(home_team: str, away_team: str):
+    matches = df_matches[
+        ((df_matches['home_team'] == home_team) & (df_matches['away_team'] == away_team)) |
+        ((df_matches['home_team'] == away_team) & (df_matches['away_team'] == home_team))
+    ].sort_values("date", ascending=False).head(5)
+    
+    results = []
+    for _, row in matches.iterrows():
+        results.append({
+            "date": row['date'],
+            "home_team": row['home_team'],
+            "away_team": row['away_team'],
+            "home_score": row['home_score'],
+            "away_score": row['away_score'],
+            "tournament": row['tournament']
+        })
+    
+    return {"head_to_head": results}
