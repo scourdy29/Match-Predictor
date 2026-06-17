@@ -31,7 +31,7 @@ function App() {
     if (!home || !away) return;
     fetch(`https://match-predictor-kv3y.onrender.com/head-to-head?home_team=${encodeURIComponent(home)}&away_team=${encodeURIComponent(away)}`)
       .then(res => res.json())
-      .then(data => setHeadToHead(data.matches))
+      .then(data => setHeadToHead(data.matches || []))
       .catch(err => console.error(err));
   }
  
