@@ -28,6 +28,54 @@ const groups = {
   L: ["England", "Croatia", "Ghana", "Panama"]
 };
 
+async function predictMatch(home, away) {
+  const res = await fetch('https://match-predictor-kv3y.onrender.com/predict', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ home_team: home, away_team: away, tournament: "FIFA World Cup" })
+  });
+  const data = await res.json();
+  if (data.predicted_winner === "home_win") return home;
+  if (data.predicted_winner === "away_win") return away;
+  // For draws in knockout, pick higher confidence team (home wins tiebreak)
+  return home;
+}
+
+async function simulateGroupStandings() {
+  const allStandings = {};
+
+  for (const [group, groupTeams] of Object.entries(groups)) {
+    const standings = {};
+    groupTeams.forEach(t => standings[t] = { points: 0, played: 0, group });
+
+    for (let i = 0; i < groupTeams.length; i++) {
+      for (let j = i + 1; j < groupTeams.length; j++) {
+        const home = groupTeams[i];
+        const away = groupTeams[j];
+        const res = await fetch('https://match-predictor-kv3y.onrender.com/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ home_team: home, away_team: away, tournament: "FIFA World Cup" })
+        });
+        const data = await res.json();
+        standings[home].played++;
+        standings[away].played++;
+        if (data.predicted_winner === "home_win") standings[home].points += 3;
+        else if (data.predicted_winner === "away_win") standings[away].points += 3;
+        else { standings[home].points += 1; standings[away].points += 1; }
+      }
+    }
+
+    const sorted = Object.entries(standings)
+      .sort((a, b) => b[1].points - a[1].points)
+      .map(([team, stats]) => ({ team, ...stats }));
+
+    allStandings[group] = sorted;
+  }
+
+  return allStandings;
+}
+
 function App() {
   const [homeTeam, setHomeTeam] = useState("");
   const [awayTeam, setAwayTeam] = useState("");
@@ -37,6 +85,9 @@ function App() {
   const [activeTab, setActiveTab] = useState("predictor");
   const [groupResults, setGroupResults] = useState({});
   const [simulating, setSimulating] = useState(false);
+  const [bracket, setBracket] = useState(null);
+  const [simulatingTournament, setSimulatingTournament] = useState(false);
+  const [tournamentStatus, setTournamentStatus] = useState("");
 
   function formatPrediction(pred) {
     if (pred === "home_win") return `🏆 ${homeTeam} Wins!`;
@@ -69,37 +120,98 @@ function App() {
 
   async function simulateGroups() {
     setSimulating(true);
-    const results = {};
+    const allStandings = await simulateGroupStandings();
+    setGroupResults(allStandings);
+    setSimulating(false);
+  }
 
-    for (const [group, groupTeams] of Object.entries(groups)) {
-      const standings = {};
-      groupTeams.forEach(t => standings[t] = { points: 0, played: 0 });
+  async function simulateTournament() {
+    setSimulatingTournament(true);
+    setBracket(null);
 
-      for (let i = 0; i < groupTeams.length; i++) {
-        for (let j = i + 1; j < groupTeams.length; j++) {
-          const home = groupTeams[i];
-          const away = groupTeams[j];
-          const res = await fetch('https://match-predictor-kv3y.onrender.com/predict', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ home_team: home, away_team: away, tournament: "FIFA World Cup" })
-          });
-          const data = await res.json();
-          standings[home].played++;
-          standings[away].played++;
-          if (data.predicted_winner === "home_win") standings[home].points += 3;
-          else if (data.predicted_winner === "away_win") standings[away].points += 3;
-          else { standings[home].points += 1; standings[away].points += 1; }
-        }
-      }
+    setTournamentStatus("Simulating group stage...");
+    const allStandings = await simulateGroupStandings();
 
-      results[group] = Object.entries(standings)
-        .sort((a, b) => b[1].points - a[1].points)
-        .map(([team, stats]) => ({ team, ...stats }));
+    // Get top 2 from each group
+    const qualifiers = {};
+    const thirdPlace = [];
+    for (const [group, standings] of Object.entries(allStandings)) {
+      qualifiers[group] = { first: standings[0].team, second: standings[1].team };
+      thirdPlace.push({ team: standings[2].team, points: standings[2].points, group });
     }
 
-    setGroupResults(results);
-    setSimulating(false);
+    // Best 8 third place teams
+    const best8Third = thirdPlace
+      .sort((a, b) => b.points - a.points)
+      .slice(0, 8)
+      .map(t => t.team);
+
+    // Build Round of 32 (simplified pairing)
+    setTournamentStatus("Simulating Round of 32...");
+    const r32Teams = [];
+    for (const group of Object.keys(groups)) {
+      r32Teams.push(qualifiers[group].first);
+      r32Teams.push(qualifiers[group].second);
+    }
+    best8Third.forEach(t => r32Teams.push(t));
+
+    const r32Results = [];
+    const r16Teams = [];
+    for (let i = 0; i < r32Teams.length; i += 2) {
+      const winner = await predictMatch(r32Teams[i], r32Teams[i + 1]);
+      r32Results.push({ home: r32Teams[i], away: r32Teams[i + 1], winner });
+      r16Teams.push(winner);
+    }
+
+    setTournamentStatus("Simulating Round of 16...");
+    const r16Results = [];
+    const qfTeams = [];
+    for (let i = 0; i < r16Teams.length; i += 2) {
+      const winner = await predictMatch(r16Teams[i], r16Teams[i + 1]);
+      r16Results.push({ home: r16Teams[i], away: r16Teams[i + 1], winner });
+      qfTeams.push(winner);
+    }
+
+    setTournamentStatus("Simulating Quarter Finals...");
+    const qfResults = [];
+    const sfTeams = [];
+    for (let i = 0; i < qfTeams.length; i += 2) {
+      const winner = await predictMatch(qfTeams[i], qfTeams[i + 1]);
+      qfResults.push({ home: qfTeams[i], away: qfTeams[i + 1], winner });
+      sfTeams.push(winner);
+    }
+
+    setTournamentStatus("Simulating Semi Finals...");
+    const sfResults = [];
+    const finalTeams = [];
+    for (let i = 0; i < sfTeams.length; i += 2) {
+      const winner = await predictMatch(sfTeams[i], sfTeams[i + 1]);
+      sfResults.push({ home: sfTeams[i], away: sfTeams[i + 1], winner });
+      finalTeams.push(winner);
+    }
+
+    setTournamentStatus("Simulating the Final...");
+    const champion = await predictMatch(finalTeams[0], finalTeams[1]);
+    const finalResult = { home: finalTeams[0], away: finalTeams[1], winner: champion };
+
+    setBracket({ r32: r32Results, r16: r16Results, qf: qfResults, sf: sfResults, final: finalResult, champion });
+    setTournamentStatus("");
+    setSimulatingTournament(false);
+  }
+
+  function RoundDisplay({ title, matches }) {
+    return (
+      <div className="round">
+        <h3 className="round-title">{title}</h3>
+        {matches.map((m, i) => (
+          <div key={i} className="bracket-match">
+            <span className={m.winner === m.home ? "team winner" : "team loser"}>{m.home}</span>
+            <span className="vs-small">vs</span>
+            <span className={m.winner === m.away ? "team winner" : "team loser"}>{m.away}</span>
+          </div>
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -112,10 +224,13 @@ function App() {
 
       <div className="tabs">
         <button className={activeTab === "predictor" ? "tab active" : "tab"} onClick={() => setActiveTab("predictor")}>
-          Match Predictor
+          Predictor
         </button>
         <button className={activeTab === "groups" ? "tab active" : "tab"} onClick={() => setActiveTab("groups")}>
-          Group Stage
+          Groups
+        </button>
+        <button className={activeTab === "tournament" ? "tab active" : "tab"} onClick={() => setActiveTab("tournament")}>
+          Tournament
         </button>
       </div>
 
@@ -179,7 +294,7 @@ function App() {
       {activeTab === "groups" && (
         <div className="card">
           <button className="predict-btn" onClick={simulateGroups} disabled={simulating}>
-            {simulating ? "Simulating... (this may take a moment)" : "⚽ Simulate All Groups"}
+            {simulating ? "Simulating..." : "⚽ Simulate All Groups"}
           </button>
 
           {Object.entries(groupResults).map(([group, standings]) => (
@@ -195,6 +310,28 @@ function App() {
               ))}
             </div>
           ))}
+        </div>
+      )}
+
+      {activeTab === "tournament" && (
+        <div className="card">
+          <button className="predict-btn" onClick={simulateTournament} disabled={simulatingTournament}>
+            {simulatingTournament ? tournamentStatus || "Simulating..." : "🏆 Simulate Entire Tournament"}
+          </button>
+
+          {bracket && (
+            <>
+              <div className="champion-box">
+                <p className="result-label">🏆 World Cup Champion</p>
+                <h2 className="champion-name">{bracket.champion}</h2>
+              </div>
+              <RoundDisplay title="Final" matches={[bracket.final]} />
+              <RoundDisplay title="Semi Finals" matches={bracket.sf} />
+              <RoundDisplay title="Quarter Finals" matches={bracket.qf} />
+              <RoundDisplay title="Round of 16" matches={bracket.r16} />
+              <RoundDisplay title="Round of 32" matches={bracket.r32} />
+            </>
+          )}
         </div>
       )}
     </div>

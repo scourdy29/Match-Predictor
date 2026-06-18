@@ -200,3 +200,61 @@ select:focus {
   color: #FFD700;
   font-weight: bold;
 }
+
+.round {
+  margin-top: 20px;
+}
+
+.round-title {
+  color: #FFD700;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #222;
+}
+
+.bracket-match {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #1a1a1a;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.team {
+  flex: 1;
+}
+
+.team.winner {
+  color: #FFD700;
+  font-weight: bold;
+}
+
+.team.loser {
+  color: #444;
+}
+
+.vs-small {
+  color: #333;
+  font-size: 0.75rem;
+}
+
+.champion-box {
+  margin-top: 20px;
+  padding: 24px;
+  background: linear-gradient(135deg, #1a1a00, #1a1a1a);
+  border: 2px solid #FFD700;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.champion-name {
+  color: #FFD700;
+  font-size: 2rem;
+  margin-top: 8px;
+}
