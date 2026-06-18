@@ -179,7 +179,7 @@ function App() {
       {activeTab === "groups" && (
         <div className="card">
           <button className="predict-btn" onClick={simulateGroups} disabled={simulating}>
-            {simulating ? "Simulating... (this takes ~30 seconds)" : "⚽ Simulate All Groups"}
+            {simulating ? "Simulating... (this may take a moment)" : "⚽ Simulate All Groups"}
           </button>
 
           {Object.entries(groupResults).map(([group, standings]) => (
