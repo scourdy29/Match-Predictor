@@ -35,10 +35,19 @@ async function predictMatch(home, away) {
     body: JSON.stringify({ home_team: home, away_team: away, tournament: "FIFA World Cup" })
   });
   const data = await res.json();
-  if (data.predicted_winner === "home_win") return home;
-  if (data.predicted_winner === "away_win") return away;
-  // For draws in knockout, pick higher confidence team (home wins tiebreak)
-  return home;
+
+  const confidence = data.confidence / 100;
+  const roll = Math.random();
+
+  if (roll < confidence) {
+    if (data.predicted_winner === "home_win") return home;
+    if (data.predicted_winner === "away_win") return away;
+    return Math.random() < 0.5 ? home : away;
+  } else {
+    if (data.predicted_winner === "home_win") return away;
+    if (data.predicted_winner === "away_win") return home;
+    return Math.random() < 0.5 ? home : away;
+  }
 }
 
 async function simulateGroupStandings() {
@@ -52,17 +61,11 @@ async function simulateGroupStandings() {
       for (let j = i + 1; j < groupTeams.length; j++) {
         const home = groupTeams[i];
         const away = groupTeams[j];
-        const res = await fetch('https://match-predictor-kv3y.onrender.com/predict', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ home_team: home, away_team: away, tournament: "FIFA World Cup" })
-        });
-        const data = await res.json();
+        const winner = await predictMatch(home, away);
         standings[home].played++;
         standings[away].played++;
-        if (data.predicted_winner === "home_win") standings[home].points += 3;
-        else if (data.predicted_winner === "away_win") standings[away].points += 3;
-        else { standings[home].points += 1; standings[away].points += 1; }
+        if (winner === home) standings[home].points += 3;
+        else standings[away].points += 3;
       }
     }
 
@@ -132,7 +135,6 @@ function App() {
     setTournamentStatus("Simulating group stage...");
     const allStandings = await simulateGroupStandings();
 
-    // Get top 2 from each group
     const qualifiers = {};
     const thirdPlace = [];
     for (const [group, standings] of Object.entries(allStandings)) {
@@ -140,13 +142,11 @@ function App() {
       thirdPlace.push({ team: standings[2].team, points: standings[2].points, group });
     }
 
-    // Best 8 third place teams
     const best8Third = thirdPlace
       .sort((a, b) => b.points - a.points)
       .slice(0, 8)
       .map(t => t.team);
 
-    // Build Round of 32 (simplified pairing)
     setTournamentStatus("Simulating Round of 32...");
     const r32Teams = [];
     for (const group of Object.keys(groups)) {
